@@ -32,6 +32,47 @@ $(document).ready(function() {
     //  nextbut.addEventListener("click", saveCurrent(showNext, lastIdx));
 });
 
+function exportToCsv(filename, rows) {
+    var processRow = function (row) {
+        var finalVal = '';
+        for (var j = 0; j < row.length; j++) {
+            var innerValue = row[j] === null ? '' : row[j].toString();
+            if (row[j] instanceof Date) {
+                innerValue = row[j].toLocaleString();
+            };
+            var result = innerValue.replace(/"/g, '""');
+            if (result.search(/("|,|\n)/g) >= 0)
+                result = '"' + result + '"';
+            if (j > 0)
+                finalVal += ',';
+            finalVal += result;
+        }
+        return finalVal + '\n';
+    };
+
+    var csvFile = '';
+    csvFile += processRow(headers);
+    for (var i = 0; i < rows.length; i++) {
+        csvFile += processRow(rows[i]);
+    }
+
+    var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, filename);
+    } else {
+        var link = document.createElement("a");
+        if (link.download !== undefined) { // feature detection
+            // Browsers that support HTML5 download attribute
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+}
 
 function processData(allText, array) {
     console.log('read data')
@@ -95,21 +136,22 @@ function downloadCur(){
             }
         }
     }
+    exportToCsv('wiki_result.csv', result);
     // const rows = [["name1", "city1", "some other info"], ["name2", "city2", "more info"]];
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += headers.join(",") + "\r\n";
-    result.forEach(function(rowArray){
-        let row = rowArray.join(",");
-        csvContent += row + "\r\n";
-        }); 
-    var encodedUri = encodeURI(csvContent);
-    var link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "wiki_result.csv");
-    link.innerHTML= "Click Here to download";
-    document.body.appendChild(link); // Required for FF
-    link.click();
-    document.body.removeChild(link);
+    // let csvContent = "data:text/csv;charset=utf-8,";
+    // csvContent += headers.join(",") + "\r\n";
+    // result.forEach(function(rowArray){
+    //     let row = rowArray.join(",");
+    //     csvContent += row + "\r\n";
+    //     }); 
+    // var encodedUri = encodeURI(csvContent);
+    // var link = document.createElement("a");
+    // link.setAttribute("href", encodedUri);
+    // link.setAttribute("download", "wiki_result.csv");
+    // link.innerHTML= "Click Here to download";
+    // document.body.appendChild(link); // Required for FF
+    // link.click();
+    // document.body.removeChild(link);
 }
 
 function showNext(last_idx){
